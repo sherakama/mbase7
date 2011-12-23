@@ -1,0 +1,49 @@
+/*----inline-links-----*/
+.inline-links ul {
+  padding: 0;
+}
+.inline-links ul li {
+  border-right: 1px solid #777;
+  display: inline;
+  display: inline-block;
+  padding: 0 10px 0 0;
+  line-height: 1em;
+  margin: 0 10px 0 0;
+}
+.inline-links ul li.last {
+  border-right: none;
+}
+.inline-links ul ul {
+  display: none;
+}
+
+/*----column-links-----*/
+.column-links ul {
+  padding: 0;
+}
+.column-links ul li {
+  display: inline;
+  display: inline-block;
+  margin: 0 50px 0 0;
+  position: relative;
+  vertical-align: top;
+}
+.column-links ul li a {
+  font-weight: bold;
+}
+.column-links ul li ul {
+  display: block;
+  position: relative;
+}
+.column-links ul li ul li {
+  display: block;
+  margin: 0;
+}
+.column-links ul li ul li a {
+  font-weight: normal;
+  font-size: 0.9em;
+  line-height: 1em;
+}
+.column-links ul li ul li ul  {
+  padding: 0 0 0 10px;
+}

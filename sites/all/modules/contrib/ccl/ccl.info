@@ -1,0 +1,16 @@
+name = "Custom Contextual Links"
+description = "Add your own contextual links to blocks and nodes"
+
+core = 7.x
+dependencies[] = contextual
+
+files[] = ccl.module
+files[] = ccl.admin.inc
+
+configure = admin/config/user-interface/ccl
+; Information added by drupal.org packaging script on 2011-11-11
+version = "7.x-1.0"
+core = "7.x"
+project = "ccl"
+datestamp = "1321048228"
+

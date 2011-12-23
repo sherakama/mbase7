@@ -1,0 +1,116 @@
+name = plink
+description = Plink uber starter theme. Installation instructions and tips like what contributed modules enhance this theme are included in README.txt
+core = 7.x
+engine = phptemplate
+screenshot = screenshot.png
+
+; Default Regions
+; --------------------------------------------
+regions[content] = Content
+regions[help] = Help
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom
+
+; Plink Regions
+; ---------------------------------------------
+regions[header] = Header
+regions[preface_first] = Preface First
+regions[preface] = Preface Middle
+regions[preface_last] = Preface Last
+regions[highlighted] = Highlighted
+regions[page_title_prefix] = Page title prefix
+regions[page_title_suffix] = Page title suffix
+regions[content_first] = Content First
+regions[content_last] = Content last
+regions[secondary] = Secondary
+regions[tertiary] = Tertiary
+regions[postscript_first] = Postscript First
+regions[postscript] = Postscript Middle
+regions[postscript_last] = Postscript Last
+regions[navigation] = Navigation
+regions[footer] = Footer
+
+; Stylesheets
+; --------------------------------------------
+;	For various reasons, it is recommended that you add 
+;	your stylesheets via the theme's template.php file.
+
+; Scripts
+; --------------------------------------------
+; Same as stylesheets
+
+; Features
+; --------------------------------------------
+features[] = name
+features[] = favicon
+
+
+; Default Settings
+; Set the default settings to be used in theme-settings.php
+; --------------------------------------------
+
+; ** To grid **
+settings[enable_grid_system]				= 1
+settings[grid_master_width] 				= 960
+settings[grid_custom_master_width]  = 0
+settings[grid_columns]              = 12
+settings[grid_fixed_or_fluid]       = px
+settings[full_width_regions][] 			= 0
+
+
+; ** or not to grid **
+settings[nogrid_page_width]         = 960
+
+
+; ** Master Page Layout options **
+settings[main_layout] 							= 1
+settings[master_secondary_width] 		= 240
+settings[master_tertiary_width] 		= 240
+
+; ** Media Query 1 **
+settings[enable_responsive_mq1]     = 0
+settings[responsive_layouts_mq1]    = 1
+settings[mq1_min]                   = 1152
+settings[mq1_max]                   = 1487
+settings[mq1_grid_width]            = 1152
+settings[mq1_secondary_width]       = 3
+settings[mq1_tertiary_width]        = 3
+
+
+; ** Media Query 2 **
+settings[enable_responsive_mq2]     = 0
+settings[responsive_layouts_mq2]    = 1
+settings[mq2_min]                   = 720
+settings[mq2_max]                   = 959
+settings[mq2_grid_width]            = 720
+settings[mq2_secondary_width]       = 3
+settings[mq2_tertiary_width]        = 3
+
+; ** Media Query 3 **
+settings[enable_responsive_mq3]     = 0
+settings[responsive_layouts_mq3]    = 1
+settings[mq3_min]                   = 0
+settings[mq3_max]                   = 719
+settings[mq3_grid_width]            = 336
+settings[mq3_secondary_width]       = 3
+settings[mq3_tertiary_width]        = 3
+
+
+; ** Additional Configuration **
+settings[enable_breadcrumbs]				= 1
+settings[enable_meta_info]			  	= 1 
+settings[enable_apple_touch]        = 1
+
+
+
+; Skinr
+; --------------------------------------------
+skinr[api] = 2
+skinr[directory] = skins
+
+; Information added by drupal.org packaging script on 2011-07-17
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "plink"
+datestamp = "1310905051"
+

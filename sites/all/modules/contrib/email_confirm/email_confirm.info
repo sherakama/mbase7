@@ -1,0 +1,12 @@
+name = Email Confirm
+description = "Requires a user to verify changes to their email address"
+core = 7.x
+files[] = email_confirm.install
+files[] = email_confirm.module
+configure = admin/config/people/email_confirm
+; Information added by drupal.org packaging script on 2011-11-08
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "email_confirm"
+datestamp = "1320710805"
+

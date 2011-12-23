@@ -1,0 +1,19 @@
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+TODO
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+css3-mediaqueries shiv for IE
+Create a mobile only theme
+Add in micro formats, microformats meta tags for profiles
+Create skin sets for wireframing and menu types. 
+Create plinko extras module for settings by path
+Check and tweak css defaults for headings, copy, tables, form items. 
+Theme default search results 
+add in preprocess hooks to get HTML5 form elements by default.
+research and implement caching on non-960 gs layouts css
+research Drupal RDFA and html5 and update accordingly
+add no scale to view port meta tag
+Administration pages css testing and tweaking
+
+yslow testing
+refactor layout processing functions as they can be optimized a whole lot

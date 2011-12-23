@@ -1,0 +1,174 @@
+.plink-placeholder .inner, 
+.plink-placeholder .inner, 
+.plink-placeholder .inner, 
+.plink-placeholder .inner, 
+.plink-placeholder .inner, 
+.plink-placeholder .inner, 
+.plink-placeholder .inner{
+background-image: url(../img/placeholder.png)!important;
+background-position: 50% 50%;
+background-repeat: repeat;
+text-align: center !important;
+padding: 10px;
+}
+
+.plink-block-aaa.plink-placeholder .inner,
+.plink-block-bbb.plink-placeholder .inner,
+.plink-block-aaa.plink-placeholder .inner,
+.plink-block-black.plink-placeholder .inner{
+background-image: url(../img/placeholder-white.png)!important;
+}
+
+.plink-placeholder .content, 
+.plink-placeholder .content, 
+.plink-placeholder .content, 
+.plink-placeholder .content, 
+.plink-placeholder .content, 
+.plink-placeholder .content, 
+.plink-placeholder .content{
+visibility: hidden;
+}
+
+
+
+.plink-height-50 .inner{
+height: 50px;
+}
+
+.plink-height-100 .inner{ 
+height: 100px;
+}
+
+.plink-height-150 .inner{
+height: 150px;
+}
+
+.plink-height-200 .inner{
+height: 200px;
+}
+
+.plink-height-250 .inner{
+height: 250px;
+}
+
+.plink-height-300 .inner{
+height: 300px;
+}
+
+.plink-height-350 .inner{
+height: 350px;
+}
+
+.plink-height-400 .inner{
+height: 400px;
+}
+
+
+
+.plink-placeholder.plink-height-50 .inner{
+height: 30px;
+}
+
+.plink-placeholder.plink-height-100 .inner{ 
+height: 80px;
+}
+
+.plink-placeholder.plink-height-150 .inner{
+height: 130px;
+}
+
+.plink-placeholder.plink-height-200 .inner{
+height: 180px;
+}
+
+.plink-placeholder.plink-height-250 .inner{
+height: 230px;
+}
+
+.plink-placeholder.plink-height-300 .inner{
+height: 280px;
+}
+
+.plink-placeholder.plink-height-350 .inner{
+height: 330px;
+}
+
+.plink-placeholder.plink-height-400 .inner{
+height: 380px;
+}
+
+
+.plink-padding.plink-height-50 .inner{
+height: 0px;
+}
+
+.plink-padding.plink-height-100 .inner{ 
+height: 40px;
+}
+
+.plink-padding.plink-height-150 .inner{
+height: 90px;
+}
+
+.plink-padding.plink-height-200 .inner{
+height: 140px;
+}
+
+.plink-padding.plink-height-250 .inner{
+height: 190px;
+}
+
+.plink-padding.plink-height-300 .inner{
+height: 240px;
+}
+
+.plink-padding.plink-height-350 .inner{
+height: 290px;
+}
+
+.plink-padding.plink-height-400 .inner{
+height: 340px;
+}
+
+
+.plink-block-eee .inner{
+background-color: #eee !important;}
+
+.plink-block-ddd .inner{
+background-color: #ddd !important;}
+
+
+.plink-block-ccc .inner{
+background-color: #ccc !important;}
+
+
+.plink-block-bbb .inner{
+background-color: #bbb !important;}
+
+.plink-block-aaa .inner{
+background-color: #aaa !important;}
+
+
+.plink-block-black .inner{
+background-color: #000 !important;
+color: #fff;}
+
+
+.plink-block-border-grey .inner{
+border: 1px solid #ccc;}
+
+.plink-block-border-black .inner{
+border: 1px solid #000;}
+
+.plink-block-border-grey-rnd .inner{
+border: 1px solid #999;
+-moz-border-radius: 10px;
+-webkit-border-radius: 10px;
+border-radius: 10px;}
+
+.plink-block-border-black-rnd .inner{
+border: 1px solid #000;
+-moz-border-radius: 10px;
+-webkit-border-radius: 10px;
+border-radius: 10px;}
+

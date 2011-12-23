@@ -1,0 +1,69 @@
+<?php
+/**
+ * @file
+ * Provides install, upgrade and un-install functions for ccl.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function ccl_schema() {
+  $schema['ccl'] = array(
+    'description' => 'The base table for custom context links.',
+    'fields' => array(
+      'clid' => array(
+        'description' => 'The primary identifier for a link.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'type' => array(
+        'description' => 'The type the link will target.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'global' => array(
+        'description' => 'The flag that determines if the link is global.',
+        'type' => 'int',
+        'default' => 0
+      ),
+      'ct' => array(
+        'description' => 'The content type this link will target.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => ''
+      ),
+      'nid' => array(
+        'description' => 'The node id that a link targets.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'default' => 0
+      ),
+      'block' => array(
+        'description' => 'The block identifier a link targets.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => ''
+      ),
+      'title' => array(
+        'description' => 'The title of link.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'link' => array(
+        'description' => 'The URL of link.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('clid'),
+  );
+  return $schema;
+}
+
