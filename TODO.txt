@@ -5,3 +5,5 @@
 - Create and set home page node.
 - Arrange content type fields so that menu is not at top
 - add cache router and APC modules
+- make make file
+- make installation profile
