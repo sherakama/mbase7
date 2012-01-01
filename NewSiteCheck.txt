@@ -1,0 +1,6 @@
+NEW SITE TASKS LIST CHECK
+
+- Create new theme from MYTHEME
+- CHANGE WYSIWYG CSS PATH
+- Change site name
+- Change site email
