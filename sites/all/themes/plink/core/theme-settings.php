@@ -17,7 +17,7 @@ drupal_add_js(drupal_get_path('theme','plink') . "/js/theme-settings.js", 'file'
 /**
 * Implementation of THEMENAME_form_system_theme_settings_alter() function.
 */
-function plink_form_system_theme_settings_alter(&$form, &$form_state) {
+function plink_form_system_theme_settings_alter(&$form, &$form_state) {  
   // Retrieve the theme key for the theme being edited. 
   $theme_key = $form_state['build_info']['args'][0];
 	$theme_data = list_themes();
@@ -758,7 +758,14 @@ $form['content_layouts_mq3']['right_column_wrapper_closure'] = array(
  **/ 
 
 function plink_theme_get_setting($var, $theme = NULL) {
-	return theme_get_setting($var,$theme);
+  $ts = array();
+  
+  if(module_exists('plinko')) {
+    $ts = plinko_theme_get_setting($var,$theme);
+  } else {
+    $ts = theme_get_setting($var,$theme);
+  }
+	return $ts;
 }
 
 /**

@@ -79,24 +79,36 @@
 
 // Main content areas
 #container {
-  .transition(all, 0.5s);
  
   #primary { 
-    .transition(all, 0.5s);
   }// end primary
     
   #secondary { 
-    .transition(all, 0.5s);
   }// end secondary
   
-  #tertiary { 
-    .transition(all, 0.5s);
-  
+  #tertiary {   
   }// end tertiary
   
 } // end container
 
 
+
+
+// Adds animations to the media query transitions
+.mq1, .mq2, .mq3 {
+  #container {
+    .transition(all, 0.5s);
+    #primary { 
+      .transition(all, 0.5s);
+    }// end primary
+    #secondary { 
+      .transition(all, 0.5s);
+    }// end secondary
+    #tertiary { 
+      .transition(all, 0.5s);
+    }// end tertiary
+  } // end container
+}
 
 /** ************************************************************************ **/
 /** END PLINK THEME STRUCTUAL IDS

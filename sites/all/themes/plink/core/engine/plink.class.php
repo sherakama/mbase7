@@ -69,10 +69,10 @@ class Plink
 				global $theme; // current theme
 				$this->theme_data = $theme_data = list_themes();
 				$default_settings = ($theme && isset($theme_data[$theme]->info['settings'])) ? $theme_data[$theme]->info['settings'] : array();
+				
+			  // The current settings for this theme
 				$saved_settings = variable_get('theme_' . $theme . '_settings', array());
-			
-				// The current settings for this theme
-				$this->theme_settings = array_merge($default_settings,$saved_settings);
+  			$this->theme_settings = array_merge($default_settings,$saved_settings);
 				
 				// Alter the theme settings if the plinko companion module is around.
 				// We change the settings here before anything is processed and this
@@ -82,9 +82,16 @@ class Plink
 				// If someone could write a context reaction that changes page settings I would heart you.
 				
 				if(module_exists('plinko')) {
-					// Do something like an array_merge with a plinko method on the theme settings
-				} 
-		      
+				  
+				  // Path based settings
+					$plinko_settings = plinko_get_path_theme_settings($theme);
+										
+					if(is_array($plinko_settings)) {
+					 $this->theme_settings = array_merge($this->theme_settings, $plinko_settings); 
+					}
+					
+				}
+				
 		    // Set the master page width
 				$this->page_width = $this->theme_settings['main_grid_width'];
 		  
@@ -135,13 +142,11 @@ class Plink
 			// do not process sidebars on overlay page.			
 			if(module_exists('overlay') && isset($_REQUEST['render']) && $_REQUEST['render'] == 'overlay') { return; }
 			
-			// Media Query Layouts
-			$this->init_media_query_based_layouts();
-			
       // Init Master Layout
 			$this->init_grid_layouts();
 			
-
+      // Media Query Layouts
+			$this->init_media_query_based_layouts();
 			
 		}
 		
@@ -699,6 +704,7 @@ class Plink
   
     private function generate_grid_css($width, $cols, $gutter, $min, $max, $grid_prefix = '') {
       $css = "";
+      // $strength = (!empty($grid_prefix)) ? "body " : "";
       
       $min = ($min) ? " and (min-width : " . $min. "px)" : "";
       $max = ($max) ? " and (max-width : " . $max. "px)" : "";
@@ -707,11 +713,14 @@ class Plink
 
       // Default cover alls
       $css .= ".block { width: 100%; margin: 0px; display: inline; float: left; } \r\n";
+      $css .= ".pclear { clear: none; }";
+
       $css .= ".container-" . $cols . " { margin-left: auto; margin-right: auto; width: " . $width . "px; } \r\n";
       $css .= ".container-" . $cols . " .alpha { margin-left: 0px; }";
       $css .= ".container-" . $cols . " .omega { margin-right: 0px; }";
       $css .= ".container-" . $cols . " .grid-0 { display: none; }";
-      
+      $css .= ".container-" . $cols . " ." . $grid_prefix . "pclear { clear: both; }";
+            
       $grids = array();
       $pushs = array();
       $pulls = array();

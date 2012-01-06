@@ -321,6 +321,7 @@ div.status { border-color:#f8fffc; }
 /* Min heights to avoid funny overflowing */
 #secondary, #tertiary { 
   min-height: 1px;
+  height: 100px;
 }
 
 

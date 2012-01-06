@@ -125,25 +125,25 @@
   top: 0px;
   left: 0px;
 }
-#container {
+.mq1 #container, .mq2 #container, .mq3 #container {
   -moz-transition: all 0.5s ease-in-out;
   -webkit-transition: all 0.5s ease-in-out;
   -o-transition: all 0.5s ease-in-out;
   transition: all 0.5s ease-in-out;
 }
-#container #primary {
+.mq1 #container #primary, .mq2 #container #primary, .mq3 #container #primary {
   -moz-transition: all 0.5s ease-in-out;
   -webkit-transition: all 0.5s ease-in-out;
   -o-transition: all 0.5s ease-in-out;
   transition: all 0.5s ease-in-out;
 }
-#container #secondary {
+.mq1 #container #secondary, .mq2 #container #secondary, .mq3 #container #secondary {
   -moz-transition: all 0.5s ease-in-out;
   -webkit-transition: all 0.5s ease-in-out;
   -o-transition: all 0.5s ease-in-out;
   transition: all 0.5s ease-in-out;
 }
-#container #tertiary {
+.mq1 #container #tertiary, .mq2 #container #tertiary, .mq3 #container #tertiary {
   -moz-transition: all 0.5s ease-in-out;
   -webkit-transition: all 0.5s ease-in-out;
   -o-transition: all 0.5s ease-in-out;
