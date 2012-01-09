@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Implements hook_help().
+ */
+function admin_helper_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#admin_helper':
+      return '<p>'. t('') .'</p>';
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function admin_helper_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'system_site_information_settings':      
+      $form['site_information']['site_mail']['#size'] = 0;
+      $form['front_page']['site_frontpage']['#size'] = 0;
+      $form['error_page']['site_403']['#size'] = 0;
+      $form['error_page']['site_404']['#size'] = 0;      
+    break;
+  }
+  
+
+}
+
+
+
+
+/**
+ * Implements hook_nodeapi().
+ */
+// function admin_helper_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+//   switch ($op) {
+//     case 'load':
+//       // The node is about to be loaded from the database. This hook can be used
+//       // to load additional data at this time.
+//       break;
+//     case 'view':   
+//      
+//       break;
+//     case 'alter':
+//       // The $node->content array has been rendered, so the node body or teaser
+//       // is filtered and now contains HTML. This op should only be used when text
+//       // substitution, filtering, or other raw text operations are necessary.
+//       break;
+//     case 'insert':
+//       // The node is being created (inserted in the database).
+//       break;
+//     case 'update':
+//       // The node is being updated.
+//       break;
+//     case 'validate':
+//       // The user has just finished editing the node and is trying to preview or
+//       // submit it. This hook can be used to check or even modify the node.
+//       // Errors should be set with form_set_error().
+//       break;
+//     case 'delete':
+//       // The node is being deleted.
+//       // Remove it from all collections modules      
+//       break;
+//   }
+// }

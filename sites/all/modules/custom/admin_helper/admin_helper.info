@@ -1,0 +1,5 @@
+core = 7.x
+description = Misc admin theme helper functions
+name = Admin Helper
+package = admin
+version = 7.x-1.0
