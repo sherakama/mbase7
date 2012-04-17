@@ -108,6 +108,7 @@ function metatags_quick_field_info() {
       'default_widget' => 'text_textarea',
       'default_formatter' => 'metatags_quick_default',
       'property_type' => 'text',
+      'translatable' => TRUE,
     ),
   );
 }
@@ -116,7 +117,7 @@ function metatags_quick_field_info() {
  * Implements hook_field_access().
  */
 function metatags_quick_field_access($op, $field, $entity_type, $entity, $account) {
-  if ($field['type'] == 'metatags_quick' && !user_access('edit metatags_quick')) {
+  if ($field['type'] == 'metatags_quick' && $op != 'view' && !user_access('edit metatags_quick')) {
     return FALSE;
   }
   return TRUE;
@@ -291,8 +292,17 @@ function metatags_quick_field_is_empty($item, $field) {
  */
 function metatags_quick_field_formatter_info() {
   $formats = array(
+    'metatags_quick_link' => array(
+      'label' => t('Link head element'),
+      'field types' => array('metatags_quick'),
+    ),
+    'metatags_quick_plain' => array(
+      'label' => t('Plain text of  metatags_quick'),
+      'description' => t('Provide the content as plain text.'),
+      'field types' => array('metatags_quick'),
+    ),
     'metatags_quick_default' => array(
-      'label' => t('Default metatags_quick link'),
+      'label' => t('Default metatags_quick formatter'),
       'description' => t('Add meta to html head.'),
       'field types' => array('metatags_quick'),
     ),
@@ -306,11 +316,30 @@ function metatags_quick_field_formatter_info() {
 function metatags_quick_field_formatter_view($object_type, $object, $field, $instance, $langcode, $items, $display) {
   $element = array();
   switch ($display['type']) {
+    case 'metatags_quick_link':
+      foreach ($items as $delta => $item) {
+        _metatags_quick_add_head(array(
+          'type' => 'link',
+          'name' => $item['meta_name'],
+          'content' => $item['metatags_quick'],
+        ));
+      }
+      // Hide element.
+      $element = array('#markup' => '', '#printed' => TRUE);
+      break;
+    case 'metatags_quick_plain':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array('#markup' => $item['metatags_quick']);
+      }
+      break;
     case 'metatags_quick_default':
       foreach ($items as $delta => $item) {
         _metatags_quick_add_head(array(
+          'type' => 'default',
           'name' => $item['meta_name'],
           'content' => $item['metatags_quick'],
+          'entity' => $object,
+          'entity_type' => $object_type,
         ));
       }
       // Hide element.
@@ -405,10 +434,16 @@ function metatags_quick_field_widget_form(&$form, &$form_state, $field, $instanc
       );
       break;
     case 'metatags_quick_checkboxes':
+      if (!isset($items[$delta]['metatags_quick'])) {
+        $items[$delta]['metatags_quick'] = $instance['default_value'][0]['metatags_quick'];
+      }
+      if (isset($items[$delta]['metatags_quick']) && !is_array($items[$delta]['metatags_quick'])) {
+        $items[$delta]['metatags_quick'] = explode(',', $items[$delta]['metatags_quick']);
+      }
       $addition = array(
         '#type' => 'checkboxes',
         '#options' => drupal_map_assoc(isset($instance['settings']['options']) ? explode(',', $instance['settings']['options']) : array('noindex', 'nofollow')),
-        '#default_value' => isset($items[$delta]['metatags_quick']) ? explode(',', $items[$delta]['metatags_quick']) : array(),
+        '#default_value' => $items[$delta]['metatags_quick'],
       );
       break;
     default:
@@ -431,13 +466,13 @@ function _metatags_quick_add_head($item = FALSE) {
   if (!empty($added_meta[$item['name']])) {
     return;
   }
-  // Only output meta if content is not empty.
+    
+    // Only output meta if content is not empty.
   if ($item['content']) {
     $content = $item['content'];
-    if (!empty($item['type']) && !empty($item['entity'])) {
+    if (!empty($item['entity_type']) && !empty($item['entity'])) {
       $content = token_replace($content, array(
-        $item['type'] => $item['entity'],
-      ));
+        $item['entity_type'] => $item['entity']));
     }
     else {
       $content = token_replace($content);
@@ -447,15 +482,32 @@ function _metatags_quick_add_head($item = FALSE) {
     $content = trim(strip_tags($content));
     $item['content'] = $content;
     $meta_data[] = $item;
-    $element = array(
-      '#tag' => 'meta',
-      '#attributes' => array(
-        'name' => $item['name'],
-        'content' => $item['content'],
-      ),
-    );
-    drupal_add_html_head($element, 'metatags_quick_' . $item['name']);
-
+    
+    switch ($item['type']) {
+      case 'link' :
+        // Unset an existing html head link with the same rel attribute, assuming that
+        // the array key has been built by drupal_add_html_head_link().
+        $head_elements = &drupal_static('drupal_add_html_head');
+        foreach ($head_elements as $key => $head_element) {
+          // If an existing key starts with 'drupal_add_html_head_link:[name]', unset it.
+          if (strpos($key, 'drupal_add_html_head_link:' . $item['name']) === 0) {
+            $head_elements[$key]['#access'] = FALSE;
+          }
+        }        
+        $attributes = array(
+          'rel' => $item['name'], 
+          'href' => url($item['content']));
+        drupal_add_html_head_link($attributes);
+        break;
+      case 'default' :
+      default :
+        $element = array(
+          '#tag' => 'meta', 
+          '#attributes' => array(
+            'name' => $item['name'], 
+            'content' => $item['content']));
+        drupal_add_html_head($element, 'metatags_quick_' . $item['name']);
+    }
   }
   $added_meta[$item['name']] = TRUE;
 }
@@ -480,3 +532,12 @@ function _metatags_quick_path_based_page() {
     || !($router_item['page_arguments'][0] instanceof stdClass);
 }
 
+/*
+ * Implements hook_migrate_api().
+ */
+function metatags_quick_migrate_api() {
+  $api = array(
+    'api' => 2,
+  );
+  return $api;
+}

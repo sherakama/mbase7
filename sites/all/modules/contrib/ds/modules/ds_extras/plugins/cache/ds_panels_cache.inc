@@ -6,8 +6,8 @@
  */
 
 $plugin = array(
-  'title' => t("Display suite view modes cache"),
-  'description' => t('Only use on view modes which you have styled with panels through Display suite.'),
+  'title' => t("Display Suite view modes cache"),
+  'description' => t('Only use on view modes which you have styled with panels through Display Suite.'),
   'cache get' => 'ds_panels_cache_get_cache',
   'cache set' => 'ds_panels_cache_set_cache',
   'cache clear' => 'ds_panels_cache_clear_cache',

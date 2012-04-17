@@ -4,9 +4,9 @@ core = 7.x
 files[] = email_confirm.install
 files[] = email_confirm.module
 configure = admin/config/people/email_confirm
-; Information added by drupal.org packaging script on 2011-11-08
-version = "7.x-1.x-dev"
+; Information added by drupal.org packaging script on 2012-02-14
+version = "7.x-1.0-beta1+0-dev"
 core = "7.x"
 project = "email_confirm"
-datestamp = "1320710805"
+datestamp = "1329221535"
 

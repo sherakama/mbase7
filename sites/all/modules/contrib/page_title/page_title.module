@@ -357,10 +357,17 @@ function page_title_node_type_form_submit($form, &$form_state) {
  * Implement hook_node_load().
  */
 function page_title_node_load($nodes) {
-  foreach ($nodes as $node) {
-    if ($page_title = page_title_load_title($node->nid, 'node')) {
-      $node->page_title = $page_title;
-    }
+  $nids = array();
+
+  // Get a list of node nids to fetch page_title's later
+  foreach ($nodes AS $node) {
+    $nids[] = $node->nid;
+  }
+
+  // Fetch page_title information from database and assign it to nodes
+  $result = db_query('SELECT page_title, id FROM {page_title} WHERE type = :type AND id IN (:nids)', array(':type' => 'node', ':nids' => $nids));
+  foreach ($result AS $record) {
+    $nodes[$record->id]->page_title = $record->page_title;
   }
 }
 
@@ -837,6 +844,7 @@ function forum_page_title_api() { return page_title_page_title_api(); }
 function user_page_title_api() { return page_title_page_title_api(); }
 function blog_page_title_api() { return page_title_page_title_api(); }
 function views_page_title_api() { return page_title_page_title_api(); }
+function uc_catalog_page_title_api() { return page_title_page_title_api(); }
 
 
 /**

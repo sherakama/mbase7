@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Definition of views_plugin_pager_full.
+ */
+
+/**
  * The plugin to handle full pager.
  *
  * @ingroup views_pager_plugins
@@ -24,7 +29,7 @@ class views_plugin_pager_full extends views_plugin_pager {
         'items_per_page' => array('default' => FALSE, 'bool' => TRUE),
         'items_per_page_label' => array('default' => 'Items per page', 'translatable' => TRUE),
         'items_per_page_options' => array('default' => '5, 10, 20, 40, 60'),
-        'items_per_page_options_all' => array('default' => FALSE),
+        'items_per_page_options_all' => array('default' => FALSE, 'bool' => TRUE),
         'items_per_page_options_all_label' => array('default' => '- All -', 'translatable' => TRUE),
 
         'offset' => array('default' => FALSE, 'bool' => TRUE),
@@ -164,6 +169,16 @@ class views_plugin_pager_full extends views_plugin_pager {
     }
     if ($error) {
       form_set_error('pager_options][expose][items_per_page_options', t('Please insert a list of integer numeric values separated by commas: e.g: 10, 20, 50, 100'));
+    }
+
+    // Take sure that the items_per_page is part of the expose settings.
+    if (!empty($form_state['values']['pager_options']['expose']['items_per_page']) && !empty($form_state['values']['pager_options']['items_per_page'])) {
+      $items_per_page = $form_state['values']['pager_options']['items_per_page'];
+      if (array_search($items_per_page, $options) === FALSE) {
+        form_set_error('pager_options][expose][items_per_page_options', t('Please insert the items per page (@items_per_page) from above.',
+          array('@items_per_page' => $items_per_page))
+        );
+      }
     }
   }
 

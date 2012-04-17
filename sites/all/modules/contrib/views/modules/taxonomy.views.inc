@@ -1,18 +1,14 @@
 <?php
+
 /**
  * @file
+ * Provide views data and handlers for taxonomy.module.
  *
- * Provide views data and handlers for taxonomy.module
+ * @ingroup views_module_handlers
  */
 
 /**
- * @defgroup views_taxonomy_module taxonomy.module handlers
- *
- * @{
- */
-
-/**
- * Implements hook_views_data()
+ * Implements hook_views_data().
  */
 function taxonomy_views_data() {
   $data = array();
@@ -213,6 +209,9 @@ function taxonomy_views_data() {
     'field' => array(
       'handler' => 'views_handler_field_markup',
       'format' => array('field' => 'format'),
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
     ),
   );
 
@@ -454,7 +453,7 @@ function taxonomy_field_views_data_views_data_alter(&$data, $field) {
 }
 
 /**
- * Implements hook_views_plugins
+ * Implements hook_views_plugins().
  */
 function taxonomy_views_plugins() {
   return array(
@@ -494,6 +493,7 @@ function views_taxonomy_set_breadcrumb(&$breadcrumb, &$argument) {
     }
     if (!empty($argument->options['use_taxonomy_term_path'])) {
       $path = taxonomy_term_uri($parent);
+      $path = $path['path'];
     }
     else {
       $args[$argument->position] = $parent->tid;
@@ -502,7 +502,3 @@ function views_taxonomy_set_breadcrumb(&$breadcrumb, &$argument) {
     $breadcrumb[$path] = check_plain($parent->name);
   }
 }
-
-/**
- * @}
- */

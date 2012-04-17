@@ -116,6 +116,8 @@ function rdfx_get_rdf_model($type, $data) {
   // Loads entity and its metadata.
   $wrapper = entity_metadata_wrapper($type, $data);
   $entity = $wrapper->value();
+  // Load property info.
+  $property_info = entity_get_property_info($type);
 
   $entity_uri = rdfx_resource_uri($type, $wrapper->getIdentifier());
   // Instantiates node resource as ARC2 class and set base and namespaces.
@@ -134,6 +136,10 @@ function rdfx_get_rdf_model($type, $data) {
 
   foreach ($wrapper as $name => $property) {
     if ($property->access('view')) {
+      // Substitute the schema field if the key exists.
+      if (!empty($property_info['properties'][$name]['schema field'])) {
+        $name = $property_info['properties'][$name]['schema field'];
+      }
       try {
         if ($property instanceof EntityDrupalWrapper || $property instanceof EntityValueWrapper) {
           rdfx_add_statement($index, $entity_uri, $property, $wrapper, $name);

@@ -1,9 +1,8 @@
 <?php
+
 /**
- * @file cache.inc
- *
- * Functions to load Views' data so that it knows what is available to
- * build queries from.
+ * @file
+ * Load Views' data so that it knows what is available to build queries from.
  */
 
 /**
@@ -14,8 +13,8 @@
  *   One example is views_get_handler.
  */
 function _views_fetch_data($table = NULL, $move = TRUE, $reset = FALSE) {
-  static $cache = NULL;
-  static $recursion_protection = array();
+  $cache = &drupal_static(__FUNCTION__ . '_cache');
+  $recursion_protection = &drupal_static(__FUNCTION__ . '_recursion_protected');
   if (!isset($cache) || $reset) {
     $start = microtime(TRUE);
     // NOTE: This happens whether we retrieve them from cache or otherwise.

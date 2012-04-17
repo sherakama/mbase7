@@ -45,7 +45,7 @@ function views_page_title_pattern_alter(&$pattern, &$types) {
       }
     }
     // This is a view with no args provided, or the specific arg has no title - lets use the base display title
-    elseif (@$view->display_handler->display->display_plugin == 'page_with_page_title') {
+    elseif ($view->display_handler->display->display_plugin == 'page_with_page_title') {
       $pattern = $view->display_handler->get_option('page_title_pattern');
     }
   }

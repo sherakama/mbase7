@@ -6,9 +6,9 @@ files[] = autocomplete_widgets.admin.inc
 files[] = autocomplete_widgets.common.inc
 files[] = autocomplete_widgets.module
 dependencies[] = list
-; Information added by drupal.org packaging script on 2011-10-30
-version = "7.x-1.x-dev"
+; Information added by drupal.org packaging script on 2012-04-08
+version = "7.x-1.0-beta2+2-dev"
 core = "7.x"
 project = "autocomplete_widgets"
-datestamp = "1319976095"
+datestamp = "1333886629"
 

@@ -1,9 +1,15 @@
 <?php
+
 /**
  * @file
- *   Views field handler for userlanguage.
+ * Definition of views_handler_field_user_language.
  */
 
+/**
+ * Views field handler for user language.
+ *
+ * @ingroup views_field_handlers
+ */
 class views_handler_field_user_language extends views_handler_field_user {
 
   function render_link($data, $values) {

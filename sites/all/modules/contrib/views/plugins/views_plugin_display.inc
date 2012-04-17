@@ -1,11 +1,12 @@
 <?php
+
 /**
  * @file
  * Contains the base display plugin.
  */
 
 /**
- * @defgroup views_display_plugins Views' display plugins
+ * @defgroup views_display_plugins Views display plugins
  * @{
  * Display plugins control how Views interact with the rest of Drupal.
  *
@@ -14,14 +15,12 @@
  * handle creating Views from an external module source, such as
  * a Panels pane, or an insert view, or a CCK field type.
  *
- * @see hook_views_plugins
+ * @see hook_views_plugins()
  */
 
 /**
  * The default display plugin handler. Display plugins handle options and
  * basic mechanisms for different output methods.
- *
- * @ingroup views_display_plugins
  */
 class views_plugin_display extends views_plugin {
   /**
@@ -41,6 +40,26 @@ class views_plugin_display extends views_plugin {
   function init(&$view, &$display, $options = NULL) {
     $this->view = &$view;
     $this->display = &$display;
+
+    // Load extenders as soon as possible.
+    $this->extender = array();
+    $extenders = views_get_enabled_display_extenders();
+    // If you update to the dev version the registry might not be loaded yet.
+    if (!empty($extenders) && class_exists('views_plugin_display_extender')) {
+      foreach ($extenders as $extender) {
+        $plugin = views_get_plugin('display_extender', $extender);
+        if ($plugin) {
+          $plugin->init($this->view, $this);
+          $this->extender[$extender] = $plugin;
+        }
+        else {
+          vpr('Invalid display extender @extender', array('@handler' => $extender));
+        }
+      }
+    }
+
+    // Track changes that the user should know about.
+    $changed = FALSE;
 
     // Make some modifications:
     if (!isset($options) && isset($display->display_options)) {
@@ -123,6 +142,7 @@ class views_plugin_display extends views_plugin {
       $this->set_option('offset', NULL);
       $this->set_option('use_pager', NULL);
       $this->set_option('pager', $pager);
+      $changed = TRUE;
     }
 
 
@@ -152,6 +172,7 @@ class views_plugin_display extends views_plugin {
             }
             $this->set_option($area, array('text' => $options));
             $converted = TRUE;
+            $changed = TRUE;
           }
         }
         // Ensure that options are at least an empty array
@@ -169,6 +190,7 @@ class views_plugin_display extends views_plugin {
       $this->set_option('query', $query_settings);
       // Clear the values
       $this->set_option('distinct', NULL);
+      $changed = TRUE;
     }
 
     // Convert field language settings.
@@ -176,31 +198,59 @@ class views_plugin_display extends views_plugin {
     if (isset($query_options['options']['field_language'])) {
       $this->set_option('field_language', $query_options['options']['field_language']);
       unset($query_options['options']['field_language']);
+      $changed = TRUE;
     }
     if (isset($query_options['options']['field_language_add_to_query'])) {
       $this->set_option('field_language_add_to_query', $query_options['options']['field_language_add_to_query']);
       unset($query_options['options']['field_language_add_to_query']);
+      $changed = TRUE;
     }
     $this->set_option('query', $query_options);
-  }
 
-  function construct() {
-    // Load extenders as soon as possible
-    $this->extender = array();
-    $extenders = views_get_enabled_display_extenders();
-    // If you update to the dev version the registry might not be loaded yet.
-    if (!empty($extenders) && class_exists('views_plugin_display_extender')) {
-      foreach ($extenders as $extender) {
-        $data = views_fetch_plugin_data('display_extender', $extender);
-        if (isset($data['handler']) && class_exists($data['handler'])) {
-          $this->extender[$extender] = new $data['handler']($this->view, $this);
+    // Convert filter groups.
+    $filter_groups = $this->get_option('filter_groups');
+    // Only convert if it wasn't converted yet, which is the case if there is a 0 group.
+    if (isset($filter_groups['groups'][0])) {
+      // Update filter groups.
+      $filter_groups ['groups'] = views_array_key_plus($filter_groups['groups']);
+      $this->set_option('filter_groups', $filter_groups);
+      // Update the filter group on each filter.
+      $filters = $this->get_option('filters');
+      foreach ($filters as &$filter) {
+        if (isset($filter['group'])) {
+          $filter['group']++;
         }
         else {
-          vpr('Invalid display extender @extender', array('@handler' => $extender));
+          $filter['group'] = 1;
         }
       }
+      $this->set_option('filters', $filters);
+      $changed = TRUE;
     }
-    parent::construct();
+
+    // Filter groups were allowed to be rewritten without its filters, so
+    // before this update the view was using the default values. To be sure that
+    // the existing view isn't broken, don't use this overridden values but copy
+    // them from the default display. Only do this if the filters are overridden
+    // but the filter_groups are not marked as so.
+    if (!$this->is_default_display() && !$this->options['defaults']['filters'] && $this->options['defaults']['filter_groups']) {
+      // Set filter_groups to be overridden and save the value in the
+      // display_options as well.
+      $this->options['defaults']['filter_groups'] = FALSE;
+      $this->display->display_options['defaults']['filter_groups'] = $this->options['defaults']['filter_groups'];
+      // Copy the filter_groups from the default, and add them to the
+      // display_options as well. $this->default_display is not initialized at
+      // this point.
+      $this->options['filter_groups'] = $this->view->display['default']->handler->options['filter_groups'];
+      $this->display->display_options['filter_groups'] = $this->options['filter_groups'];
+
+      $changed = TRUE;
+    }
+
+    // Mark the view as changed so the user has a chance to save it.
+    if ($changed) {
+      $this->view->changed = TRUE;
+    }
   }
 
   function destroy() {
@@ -387,6 +437,7 @@ class views_plugin_display extends views_plugin {
       'sorts' => array('sorts'),
       'arguments' => array('arguments'),
       'filters' => array('filters', 'filter_groups'),
+      'filter_groups' => array('filters', 'filter_groups'),
     );
 
     // If the display cannot use a pager, then we cannot default it.
@@ -629,7 +680,7 @@ class views_plugin_display extends views_plugin {
       'filter_groups' => array(
         'contains' => array(
           'operator' => array('default' => 'AND'),
-          'groups' => array('default' => array(0 => 'AND')),
+          'groups' => array('default' => array(1 => 'AND')),
         ),
       ),
       'filters' => array(
@@ -652,7 +703,7 @@ class views_plugin_display extends views_plugin {
     }
 
     foreach ($this->extender as $extender) {
-      $extender->option_definition($options);
+      $extender->options_definition_alter($options);
     }
 
     return $options;
@@ -725,6 +776,10 @@ class views_plugin_display extends views_plugin {
     }
   }
 
+  function get_url() {
+    return $this->view->get_url();
+  }
+
   /**
    * Check to see if the display needs a breadcrumb
    *
@@ -768,7 +823,14 @@ class views_plugin_display extends views_plugin {
   }
 
   /**
-   * Get the display or row plugin, if it exists.
+   * Get the instance of a plugin, for example style or row.
+   *
+   * @param string $type
+   *   The type of the plugin.
+   * @param string $name
+   *   The name of the plugin defined in hook_views_plugins.
+   *
+   * @return views_plugin|FALSE
    */
   function get_plugin($type = 'style', $name = NULL) {
     static $cache = array();
@@ -1061,7 +1123,7 @@ class views_plugin_display extends views_plugin {
       );
     }
 
-    $display_comment = drupal_substr($this->get_option('display_comment'), 0, 10);
+    $display_comment = check_plain(drupal_substr($this->get_option('display_comment'), 0, 10));
     $options['display_comment'] = array(
       'category' => 'other',
       'title' => t('Comment'),
@@ -1412,8 +1474,8 @@ class views_plugin_display extends views_plugin {
         );
         $form['use_more_always'] = array(
           '#type' => 'checkbox',
-          '#title' => t('Do not display more link unless there is more content'),
-          '#description' => t("This will display the more link even if there are no more items to display."),
+          '#title' => t("Display 'more' link only if there is more content"),
+          '#description' => t("Leave this unchecked to display the 'more' link even if there are no more items to display."),
           '#default_value' => !$this->get_option('use_more_always'),
             '#dependency' => array(
               'edit-use-more' => array(TRUE),
@@ -1682,6 +1744,7 @@ class views_plugin_display extends views_plugin {
 
         // Default text.
         // We have some options, so make a list.
+        $output = '';
         if (!empty($options)) {
           $output = t('<p>The following tokens are available for this link.</p>');
           foreach (array_keys($options) as $type) {
@@ -2372,6 +2435,13 @@ class views_plugin_display extends views_plugin {
 
   /**
    * Flip the override setting for the given section.
+   *
+   * @param string $section
+   *   Which option should be marked as overridden, for example "filters".
+   * @param bool $new_state
+   *   Select the new state of the option.
+   *     - TRUE: Revert to default.
+   *     - FALSE: Mark it as overridden.
    */
   function set_override($section, $new_state = NULL) {
     $options = $this->defaultable_sections($section);

@@ -1,11 +1,12 @@
 <?php
+
 /**
- * @file view.inc
+ * @file
  * Provides the view object type and associated methods.
  */
 
 /**
- * @defgroup views_objects Objects that represent a View or part of a view.
+ * @defgroup views_objects Objects that represent a View or part of a view
  * @{
  * These objects are the core of Views do the bulk of the direction and
  * storing of data. All database activity is in these objects.
@@ -33,6 +34,53 @@ class view extends views_db_object {
    * @var number
    */
   var $vid;
+
+  /**
+   * The description of the view, which is used only in the interface.
+   *
+   * @var string
+   */
+  var $description;
+
+  /**
+   * The "tags" of a view.
+   * The tags are stored as a single string, though it is used as multiple tags
+   * for example in the views overview.
+   *
+   * @var string
+   */
+  var $tag;
+
+  /**
+   * The human readable name of the view.
+   *
+   * @var string
+   */
+  var $human_name;
+
+  /**
+   * The core version the view was created for.
+   * @var int
+   */
+  var $core;
+
+  /**
+   * The views-api version this view was created by.
+   *
+   * Some examples of the variable are 3.0 or 3.0-alpha1
+   *
+   * @var string
+   */
+  var $api_version;
+
+  /**
+   * Is the view disabled.
+   *
+   * This value is used for exported view, to provide some default views which aren't enabled.
+   *
+   * @var bool
+   */
+  var $disabled;
 
   // State variables
   var $built = FALSE;
@@ -75,7 +123,7 @@ class view extends views_db_object {
   // Stores the next steps of form items to handle.
   // It's an array of stack items, which contain the form id, the type of form,
   // the view, the display and some additional arguments.
-  // @see views_ui_add_form_to_stack().
+  // @see views_ui_add_form_to_stack()
   // var $stack;
 
   /**
@@ -100,11 +148,33 @@ class view extends views_db_object {
   var $display_handler;
 
   /**
+   * Stores all display handlers of this view.
+   *
+   * @var array[views_display]
+   */
+  var $display;
+
+  /**
    * The current used style plugin.
    *
    * @var views_plugin_style
    */
    var $style_plugin;
+
+  /**
+   * Stored the changed options of the style plugin.
+   *
+   * @deprecated Better use $view->style_plugin->options
+   * @var array
+   */
+  var $style_options;
+
+  /**
+   * Stores the current active row while rendering.
+   *
+   * @var int
+   */
+  var $row_index;
 
    /**
    * Allow to override the url of the current view.
@@ -124,6 +194,58 @@ class view extends views_db_object {
    * Allow to override the used database which is used for this query.
    */
   var $base_database = NULL;
+
+  /**
+   * Here comes a list of the possible handler which are active on this view.
+   */
+
+  /**
+   * Stores the field handlers which are initialized on this view.
+   * @var array[views_handler_field]
+   */
+  var $field;
+
+  /**
+   * Stores the argument handlers which are initialized on this view.
+   * @var array[views_handler_argument]
+   */
+  var $argument;
+
+  /**
+   * Stores the sort handlers which are initialized on this view.
+   * @var array[views_handler_sort]
+   */
+  var $sort;
+
+  /**
+   * Stores the filter handlers which are initialized on this view.
+   * @var array[views_handler_filter]
+   */
+  var $filter;
+
+  /**
+   * Stores the relationship handlers which are initialized on this view.
+   * @var array[views_handler_relationship]
+   */
+  var $relationship;
+
+  /**
+   * Stores the area handlers for the header which are initialized on this view.
+   * @var array[views_handler_area]
+   */
+  var $header;
+
+  /**
+   * Stores the area handlers for the footer which are initialized on this view.
+   * @var array[views_handler_area]
+   */
+  var $footer;
+
+  /**
+   * Stores the area handlers for the empty text which are initialized on this view.
+   * @var array[views_handler_area]
+   */
+  var $empty;
 
   /**
    * Constructor
@@ -1000,6 +1122,9 @@ class view extends views_db_object {
     if (!empty($this->build_info['fail'])) {
       return;
     }
+    if (!empty($this->view->build_info['denied'])) {
+      return;
+    }
 
     drupal_theme_initialize();
 
@@ -1025,6 +1150,11 @@ class view extends views_db_object {
         $cache->cache_start();
       }
 
+      // Run pre_render for the pager as it might change the result.
+      if (!empty($this->query->pager)) {
+        $this->query->pager->pre_render($this->result);
+      }
+
       // Initialize the style plugin.
       $this->init_style();
 
@@ -1046,7 +1176,13 @@ class view extends views_db_object {
         $function($this);
       }
 
-      // Let the theme play too, because pre render is a very themey thing.
+      // Let the themes play too, because pre render is a very themey thing.
+      foreach ($GLOBALS['base_theme_info'] as $base) {
+        $function = $base->name . '_views_pre_render';
+        if (function_exists($function)) {
+          $function($this);
+        }
+      }
       $function = $GLOBALS['theme'] . '_views_pre_render';
       if (function_exists($function)) {
         $function($this);
@@ -1070,7 +1206,13 @@ class view extends views_db_object {
       $function($this, $this->display_handler->output, $cache);
     }
 
-    // Let the theme play too, because post render is a very themey thing.
+    // Let the themes play too, because post render is a very themey thing.
+    foreach ($GLOBALS['base_theme_info'] as $base) {
+      $function = $base->name . '_views_post_render';
+      if (function_exists($function)) {
+        $function($this);
+      }
+    }
     $function = $GLOBALS['theme'] . '_views_post_render';
     if (function_exists($function)) {
       $function($this, $this->display_handler->output, $cache);
@@ -1153,19 +1295,20 @@ class view extends views_db_object {
     views_set_current_view($this);
     $display_id = $this->current_display;
 
-    // Let modules modify the view just prior to executing it.
-    foreach (module_implements('views_pre_view') as $module) {
-      $function = $module . '_views_pre_view';
-      $function($this, $display_id, $args);
-    }
-
     // Prepare the view with the information we have, but only if we were
     // passed arguments, as they may have been set previously.
     if ($args) {
       $this->set_arguments($args);
     }
 
-//    $this->attach_displays();
+    // Let modules modify the view just prior to executing it.
+    foreach (module_implements('views_pre_view') as $module) {
+      $function = $module . '_views_pre_view';
+      $function($this, $display_id, $this->args);
+    }
+
+    // Allow hook_views_pre_view() to set the dom_id, then ensure it is set.
+    $this->dom_id = !empty($this->dom_id) ? $this->dom_id : md5($this->name . REQUEST_TIME . rand());
 
     // Allow the display handler to set up for execution
     $this->display_handler->pre_execute();
@@ -1524,69 +1667,6 @@ class view extends views_db_object {
   }
 
   /**
-   * Load a view from the database based upon either vid or name.
-   *
-   * This is a static factory method that implements internal caching for
-   * view objects.
-   *
-   * @param $arg
-   *  The name of the view or its internal view id (vid)
-   * @param $reset
-   *  If TRUE, reset this entry in the load cache.
-   * @return view
-   *   A view object or NULL if it was not available.
-   */
-  static function &load($arg, $reset = FALSE) {
-    static $cache = array();
-
-    // We want a NULL value to return TRUE here, so we can't use isset() or empty().
-    if (!array_key_exists($arg, $cache) || $reset) {
-      $result = db_select('views_view', 'v')
-        ->fields('v')
-        ->condition(is_numeric($arg) ? 'vid' : 'name', $arg)
-        ->execute();
-      if ($result->rowCount() == 0) {
-        $cache[$arg] = NULL;
-      }
-      else {
-        $view = new view();
-        $view->load_row($result->fetchObject());
-        $view->type = t('Normal');
-        // Load all of our subtables.
-        foreach ($view->db_objects() as $key) {
-          $object_name = "views_$key";
-          $result = db_select($object_name, 'v')
-            ->fields('v')
-            ->condition('vid', $view->vid)
-            ->orderBy('position')
-            ->execute();
-          foreach ($result as $data) {
-            $object = new $object_name(FALSE);
-            $object->load_row($data);
-
-            // Because it can get complicated with this much indirection,
-            // make a shortcut reference.
-            $location = &$view->$key;
-
-            // If we have a basic id field, load the item onto the view based on
-            // this ID, otherwise push it on.
-            if (!empty($object->id)) {
-              $location[$object->id] = $object;
-            }
-            else {
-              $location[] = $object;
-            }
-          }
-        }
-        $view->loaded = TRUE;
-        $cache[$arg] = $view;
-      }
-    }
-
-    return $cache[$arg];
-  }
-
-  /**
    * Static factory method to load a list of views based upon a $where clause.
    *
    * Although this method could be implemented to simply iterate over views::load(),
@@ -1648,21 +1728,30 @@ class view extends views_db_object {
       $this->vid = NULL;
     }
 
-    // If we have no vid or our vid is a string, this is a new view.
-    if (!empty($this->vid)) {
-      // remove existing table entries
+    $transaction = db_transaction();
+
+    try {
+      // If we have no vid or our vid is a string, this is a new view.
+      if (!empty($this->vid)) {
+        // remove existing table entries
+        foreach ($this->db_objects() as $key) {
+          db_delete('views_' . $key)
+            ->condition('vid', $this->vid)
+            ->execute();
+        }
+      }
+
+      $this->save_row(!empty($this->vid) ? 'vid' : FALSE);
+
+      // Save all of our subtables.
       foreach ($this->db_objects() as $key) {
-        db_delete('views_' . $key)
-          ->condition('vid', $this->vid)
-          ->execute();
+        $this->_save_rows($key);
       }
     }
-
-    $this->save_row(!empty($this->vid) ? 'vid' : FALSE);
-
-    // Save all of our subtables.
-    foreach ($this->db_objects() as $key) {
-      $this->_save_rows($key);
+    catch (Exception $e) {
+      $transaction->rollback();
+      watchdog_exception('views', $e);
+      throw $e;
     }
 
     $this->save_locale_strings();
@@ -1894,6 +1983,7 @@ class view extends views_db_object {
     $this->localization_plugin = views_get_plugin('localization', views_get_localization_plugin());
 
     if (empty($this->localization_plugin)) {
+      $this->localization_plugin = views_get_plugin('localization', 'none');
       return FALSE;
     }
 
@@ -1928,9 +2018,9 @@ class view extends views_db_object {
     $this->process_locale_strings('delete');
   }
 
- /**
-  * Export localized strings.
-  */
+  /**
+   * Export localized strings.
+   */
   function export_locale_strings() {
     $this->process_locale_strings('export');
   }
@@ -1953,6 +2043,8 @@ class view extends views_db_object {
  * Base class for views' database objects.
  */
 class views_db_object {
+  public $db_table;
+
   /**
    * Initialize this object, setting values from schema defaults.
    *
@@ -2073,7 +2165,7 @@ class views_db_object {
     }
     $schema = drupal_get_schema($this->db_table);
 
-    $output = $indent . '$' . $identifier . ' = new ' . get_class($this) . ";\n";
+    $output = $indent . '$' . $identifier . ' = new ' . get_class($this) . "();\n";
     // Go through our schema and build correlations.
     foreach ($schema['fields'] as $field => $info) {
       if (!empty($info['no export'])) {
@@ -2362,6 +2454,13 @@ class views_display extends views_db_object {
    * @var views_plugin_display
    */
   var $handler;
+
+  /**
+   * Stores all options of the display, like fields, filters etc.
+   *
+   * @var array
+   */
+  var $display_options;
 
   var $db_table = 'views_display';
   function views_display($init = TRUE) {

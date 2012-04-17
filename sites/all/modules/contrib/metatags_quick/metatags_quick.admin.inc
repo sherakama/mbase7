@@ -132,7 +132,8 @@ function metatags_quick_admin_settings() {
         ),
       );
       foreach ($known_tags as $name => $tag) {
-        if (empty($meta_set[$name])) {
+        $tag_name = isset($tag['meta_name']) ? $tag['meta_name'] : $name;
+        if (empty($meta_set[$tag_name])) {
           // Mark parent bundle as workable - display checkbox.
           $bundle_workable[$name] = TRUE;
           $options[$entity_type . '_' . $key]['data'][$name] = array(
@@ -305,7 +306,8 @@ function _metatags_quick_field_attach($entity_type, $bundle, $meta_name) {
     return;
   }
   // Check if meta field exists, create if necessary.
-  if (empty($field_id[$meta_name])) {
+  $meta_name_real = empty($known_tags[$meta_name]['meta_name']) ? $meta_name : $known_tags[$meta_name]['meta_name']; 
+  if (empty($field_id[$meta_name_real])) {
     $field = array(
       'field_name' => "meta_$meta_name", 
       'type' => 'metatags_quick', 
@@ -318,10 +320,10 @@ function _metatags_quick_field_attach($entity_type, $bundle, $meta_name) {
     );
     $field = field_create_field($field);
     $field_id[$meta_name] = $field['id'];
-    $meta_fields[$meta_name] = $field;
+    $meta_fields[$meta_name_real] = $field;
   }
   else {
-    $field = $meta_fields[$meta_name];
+    $field = $meta_fields[$meta_name_real];
   }
 
   // Do nothing if instance already exists.
@@ -418,14 +420,14 @@ function metatags_quick_admin_path_based($form, $form_state) {
   // fill options array
   foreach ($result as $path) {
     $options[] = array(
-      'path' => l($path->path, $path->path, array('query' => $destination)),
-      'language' =>  $languages[check_plain($path->lang)],
+      'path' => $path->path,
+      'language' =>  $languages[$path->lang],
       'edit' =>
-        l(t('edit'), 'admin/config/search/metatags_quick/path_based/edit',
-          array('query' => array('path' => $path->path, 'lang' => $path->lang, 'destination' => $destination['destination']))),
+        l(t('Edit'), 'admin/config/search/metatags_quick/path_based/edit',
+          array('query' => array('pid' => $path->id, 'destination' => $destination['destination']))),
       'delete' =>
-        l(t('delete'), 'admin/config/search/metatags_quick/path_based/delete',
-          array('query' => array('path' => $path->path, 'lang' => $path->lang, 'destination' => $destination['destination'])))
+        l(t('Delete'), 'admin/config/search/metatags_quick/path_based/delete',
+          array('query' => array('pid' => $path->id, 'destination' => $destination['destination']))),
     );
   }
   // add created table
@@ -486,25 +488,38 @@ function metatags_quick_admin_path_based_submit($form, &$form_state) {
  * Displays a form to the user allowing him to edit the path and all the fields
  * of the metatag entity associated with that path
  *
- * @param type $form
- * @param type $form_state
+ * @param array $form
+ * @param array $form_state
  */
 function metatags_quick_admin_path_based_edit($form, $form_state) {
   $controller = new DrupalDefaultEntityController('metatags_path_based');
-  $entity_id = db_select('metatags_quick_path_based', 'm')
-    ->fields('m', array('id'))
-    ->condition('lang', check_plain($_GET['lang']))
-    ->condition('path', check_plain($_GET['path']))
-    ->execute()
-    ->fetchField();
+  if (isset($_GET['pid'])) {
+    $entity_id = (int)$_GET['pid'];
+  }
+  else {
+    $entity_id = db_select('metatags_quick_path_based', 'm')
+      ->fields('m', array('id'))
+      ->condition('lang', check_plain($_GET['lang']))
+      ->condition('path', check_plain($_GET['path']))
+      ->execute()
+      ->fetchField();
+  }
   if (!$entity_id) {
     $entity_id = db_insert('metatags_quick_path_based')
       ->fields(array('lang' => check_plain($_GET['lang']), 'path' => check_plain($_GET['path'])))
       ->execute();
+    $entity = new stdClass();
+    $entity->id = $entity_id;
+    $entity->lang = check_plain($_GET['lang']);
+    $entity->path = check_plain($_GET['path']);
   }
-  $entities = $controller->load(array($entity_id));
-  $form_state['entity'] = $entities[$entity_id];
-  field_attach_form('metatags_path_based', $entities[$entity_id], $form, $form_state);
+  else {
+    $entities = $controller->load(array($entity_id));
+    $entity = $entities[$entity_id];
+  }
+  
+  $form_state['entity'] = $entity;
+  field_attach_form('metatags_path_based', $entity, $form, $form_state);
   //
   $form['entity_id'] = array(
     '#type' => 'hidden',
@@ -514,7 +529,7 @@ function metatags_quick_admin_path_based_edit($form, $form_state) {
     '#type' => 'textfield',
     '#title' => t('Edit path'),
     '#description' => t('Enter path starting without a leading "/". "*" can be used as a wildcard at the end of a path.'),
-    '#default_value' => check_plain($_GET['path']),
+    '#default_value' => html_entity_decode($entity->path),
     '#maxlength' => 255,
     '#weight' => '-50',
   );
@@ -522,7 +537,7 @@ function metatags_quick_admin_path_based_edit($form, $form_state) {
     '#title' => t('Edit language'),
     '#type' => 'select',
     '#options' => _metatags_quick_language_list(),
-    '#default_value' => check_plain($_GET['lang']),
+    '#default_value' => $entity->lang,
     '#weight' => '-40',
   );
   //
@@ -585,7 +600,7 @@ function metatags_quick_admin_path_based_edit_submit($form, $form_state) {
     return;
   }
   // Update path if it has been altered
-  if ($form_state['values']['path'] != $form_state['entity']->path
+  if ($form_state['values']['path'] != html_entity_decode($form_state['entity']->path)
     || $form_state['values']['lang'] != $form_state['entity']->lang) {
     // check if there isn't already a path like the new path
     $entity_id = db_select('metatags_quick_path_based', 'm')
@@ -631,16 +646,31 @@ function metatags_quick_admin_path_based_edit_submit($form, $form_state) {
  * @param type $form
  * @param type $form_state
  */
-function metatags_quick_admin_path_based_delete($form, $form_state) {
-  // display delete confirmation
-  if(isset($_GET['path'])) {
+function metatags_quick_admin_path_based_delete($form, &$form_state) {
+  // Delete confirmation
+  if(isset($_GET['pid'])) {
+    $pid = (int)$_GET['pid'];
+  	$controller = new DrupalDefaultEntityController('metatags_path_based');
+  	$entities = $controller->load(array($pid));
+  	
+  	if (empty($entities)) {
+      $form['intro'] = array(
+        '#markup' => t('Path not found'),
+      );
+  	  return $form;  	  	
+  	}
+  	
+  	$path_object = $entities[$pid];
+  	$form_state['#path_object'] = $path_object;
+  	 
     $form['intro'] = array(
       '#type' => 'item',
       '#markup' => t('Do you really want to delete the following path:'),
     );
+    
     $form['item'] = array(
       '#type' => 'item',
-      '#markup' => $_GET['path'] . '(' . $_GET['lang'] . ')',
+      '#markup' => htmlspecialchars_decode($path_object->path) . '(' . $path_object->lang . ')',
       '#prefix' => '<ul><li>',
       '#suffix' => '</ul></li>'
     );
@@ -670,19 +700,7 @@ function metatags_quick_admin_path_based_delete($form, $form_state) {
  * @param type $form_state
  */
 function metatags_quick_admin_path_based_delete_submit($form, &$form_state) {
-  // fetch and delete
-  $controller = new DrupalDefaultEntityController('metatags_path_based');
-  $entity_id = db_select('metatags_quick_path_based', 'm')
-    ->fields('m', array('id'))
-    ->condition('lang', check_plain($_GET['lang']))
-    ->condition('path', check_plain($_GET['path']))
-    ->execute()
-    ->fetchField();
-  if (!$entity_id) {
-    drupal_set_message(t('Path not found!'), 'error');
-  } else {
-    metatags_path_based_delete($entity_id);
-  }
+  metatags_path_based_delete($form_state['#path_object']->id);
 }
 
 /**

@@ -5,6 +5,20 @@
  */
 
 /**
+ * Implements hook_js_alter().
+ */
+function features_tools_js_alter(&$javascript) {
+  $item = menu_get_item();
+  if (isset($item['path']) && $item['path'] === 'admin/structure/features') {
+    $js_path = drupal_get_path('module', 'features') . '/features.js';
+    if (isset($javascript[$js_path])) {
+      if (variable_get('features_tools_disable_features_page_js', 0)) {
+        unset($javascript[$js_path]);
+      }
+    }
+  }
+}
+/**
  * Implements hook_permission().
  *
  * @return array An array of valid permissions for the features_tools module
@@ -37,10 +51,89 @@ function features_tools_menu() {
 }
 
 /**
+ * Implements hook_form_alter().
+ */
+function features_tools_form_features_admin_form_alter(&$form, &$form_state) {
+  $form['disable_ajax'] = array('#type' => 'checkbox', '#title' => t('disable the features status ajax loading'), '#default_value' => variable_get('features_tools_disable_features_page_js', 0));
+  $form['buttons']['submit']['#submit'][] = 'features_tools_features_admin_form_submit';
+  $form['buttons']['revert'] = array(
+   '#type' => 'submit',
+   '#value' => t('Revert them All'),
+   '#attributes' => array('onclick' => 'if(!confirm("Are you sure you want to revert all features? \nThis action cannot be undone.")){return false;}'),
+   '#submit' =>  array('features_tools_features_revert_all_submit')
+  );
+  
+  if (variable_get('features_tools_disable_features_page_js', 0) == 0) {
+    return;
+  }
+  drupal_add_css('table.features .admin-check, table.features .admin-default, table.features .admin-overridden, table.features .admin-rebuilding, table.features .admin-needs-review {
+									display: inline!important;}', array('type' => 'inline'));
+  $groups = array();
+  
+  foreach ($form['#features'] as $feature) {
+    if (isset($feature->info['package'])) {
+      $package_title = !empty($feature->info['package']) ? $feature->info['package'] : t('Other');
+      $package = strtolower(preg_replace('/[^a-zA-Z0-9-]+/', '-', $package_title));
+      if (in_array($package, $groups)) {
+        continue;
+      }
+      $groups[] = $package;
+    }
+  }
+  foreach ($groups as $group) {
+    foreach ($form[$group]['state'] as $feature_name => &$feature_status) {
+      if ($form[$group]['status'][$feature_name]['#default_value'] == 0) {
+        continue;
+      }
+      $status = features_get_storage($feature_name);
+      $cls = "admin";
+      switch ($status) {
+        case 3:
+          $cls .= "-rebuilding";
+          $txt = "Rebuilding";
+          break;
+        case 2:
+          $cls .= "-needs-review"; 
+          $txt = "Needs review";
+          break;
+        case 1:
+          $txt = "Overridden";
+          $cls .= "-overridden"; 
+          break;
+        default:
+          $txt = "Default";
+          $cls .= "-default"; 
+          break;
+      }
+      $cls .= " features-storage";
+      $feature_status['#markup'] = l($txt, "admin/structure/features/$feature_name", array('attributes' => array('class' => $cls)));
+    }
+  }  
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  */
 function features_tools_form_features_export_form_alter(&$form, &$form_state) {
+  if (isset($form['#feature']) && is_object($form['#feature']) && isset($form['#feature']->name)) {
+    $path = drupal_get_path('module', $form['#feature']->name);
+  }
+  else {
+    $path = 'sites/all/modules';
+  }
+  $writeable = file_prepare_directory($path);
+  if ($writeable === FALSE) {
+    drupal_set_message(t('The directory @path does not exists or not writable', array('@path' => $path)), 'error');
+  }
   //TODO: add backup options.
+  if (variable_get('features_tools_disable_features_page_js', 0)) {
+    foreach ($form['export']['sources'] as &$value) {
+      if (is_array($value) && isset($value['#ajax'])) {
+        unset($value['#ajax']);
+      }
+    }
+  }
+  
   $form['buttons']['create'] = array(
     '#type' => 'submit',
     '#value' => t('Auto create feature'),
@@ -50,7 +143,7 @@ function features_tools_form_features_export_form_alter(&$form, &$form_state) {
   $form['features_tools_dest'] = array(
     '#title' => t('Custom module path.'),
     '#type' => 'textfield',
-    '#default_value' => $form['#feature']->name ? drupal_get_path('module', $form['#feature']->name) : 'sites/all/modules',
+    '#default_value' => $path
   );
   if ($form['#feature']) {
     $form['buttons']['safe_recreate'] = array(
@@ -68,12 +161,14 @@ function features_tools_form_features_export_form_alter(&$form, &$form_state) {
  */
 function features_tools_form_features_export_form_safe_submit($form, &$form_state) {
 
-  module_load_include('inc', 'features', 'features.export');
-  features_include();
-  module_load_include('inc', 'rules', 'modules/events');
-  rules_invoke_event('init');
-  module_load_include('inc', 'rules_admin', 'rules_admin.export');
-  module_load_include('inc', 'rules', 'rules.export');
+  if (module_exists('rules')) {
+    module_load_include('inc', 'features', 'features.export');
+    features_include();
+    module_load_include('inc', 'rules', 'modules/events');
+    rules_invoke_event('init');
+    module_load_include('inc', 'rules_admin', 'rules_admin.export');
+    module_load_include('inc', 'rules', 'rules.export');
+  }
 
   $destination = $form_state['values']['features_tools_dest'];
   $arr = explode('/', $destination);
@@ -132,7 +227,7 @@ function features_tools_form_features_export_form_safe_submit($form, &$form_stat
       $error = TRUE;
     }
     if ($error) {
-      drupal_set_message(t('One or more files cannot be writing to the file system this is probably a permission issue. @see http://drupal.org/project/features_tools for more info'));
+      drupal_set_message(t('One or more files could not be written to the file system. This is probably a permission issue. See !link for more information.', array('!link' => l(t('the Features Tools module page'), 'http://drupal.org/project/ftools'))), 'error');
       return;
     }
     else {
@@ -207,7 +302,7 @@ function features_tools_export_build_form_submit($form, &$form_state) {
       }
     }
     if ($error) {
-      drupal_set_message(t('One or more files cannot be writing to the file system this is probably a permission issue. @see http://drupal.org/project/features_tools for more info'));
+      drupal_set_message(t('One or more files could not be written to the file system. This is probably a permission issue. See !link for more information.', array('!link' => l(t('the Features Tools module page'), 'http://drupal.org/project/ftools'))), 'error');
     }
     else {
       drupal_set_message(t('The feature was successfully created.'));
@@ -289,4 +384,15 @@ function _features_tools_get_unlink_version($destination) {
     $i++;
   }
   return array('destination' => "{$destination}_$i/", 'delta' => $i);
+}
+
+function features_tools_features_admin_form_submit($form, &$form_state) {
+  variable_set('features_tools_disable_features_page_js', $form_state['values']['disable_ajax']);
+}
+
+function features_tools_features_revert_all_submit($form, &$form_state) {
+  module_load_include('inc', 'features', 'features.export');
+  features_include();
+  features_revert();
+  $form_state['redirect'] = 'admin/structure/features';
 }

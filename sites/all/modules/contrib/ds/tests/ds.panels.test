@@ -14,7 +14,7 @@ class dsPanelViewModesTests extends dsBaseTest {
     return array(
       'name' => t('Panels'),
       'description' => t('Tests for managing layouts with Panels editor.'),
-      'group' => t('Display suite'),
+      'group' => t('Display Suite'),
     );
   }
 

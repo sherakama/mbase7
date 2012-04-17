@@ -95,6 +95,35 @@ function email_confirm_admin_settings() {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function email_confirm_form_email_confirm_admin_settings_alter(&$form, &$form_state) {
+  if (module_exists('token')) {
+
+    foreach (element_children($form) as $key) {
+      $element = &$form[$key];
+
+      switch ($key) {
+        case 'email_confirm_confirmation_email_body':
+        case 'email_confirm_confirmation_original_email_body':
+          $element['#description'] = trim(str_replace('The placeholders [user:name] and [site:name] will be replaced by the username and the site name.', t('The list of available tokens that can be used in e-mails is provided below.'), $element['#description']));
+          $element += array('#token_types' => array('user'));
+          break;
+      }
+    }
+
+    // Add the token tree UI.
+    $form['token_tree'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('user'),
+      '#show_restricted' => TRUE,
+      '#weight' => 90,
+    );
+
+  }
+}
+
+/**
  * Admin settings validate
  */
 function email_confirm_admin_settings_validate($form, $form_state) {
@@ -104,6 +133,37 @@ function email_confirm_admin_settings_validate($form, $form_state) {
   if (!empty($form_state['values']['email_confirm_confirmation_email_bcc']) && !valid_email_address($form_state['values']['email_confirm_confirmation_email_bcc'])) {
     form_set_error('email_confirm_confirmation_email_bcc', t('You must enter a valid email address for the "Email address change request email BCC email address" setting.'));
   }
+}
+
+/**
+ * Implements hook_variable_info().
+ */
+function email_confirm_variable_info($options) {
+  $type['email_confirm_confirmation_email_subject'] = array(
+    'type' => 'string',
+    'title' => t('Email address change request email subject', array(), $options),
+    'default' => email_confirm_mail_text('confirmation_email_subject', NULL, array(), FALSE),
+    'description' => t('The above text will be the subject for the email sent to a user that is attempting to update their email address. The placeholders [user:name] and [site:name] will be replaced by the username and the site name.', array(), $options),
+    'localize' => TRUE,
+  );
+
+  $type['email_confirm_confirmation_email_body'] = array(
+    'type' => 'string',
+    'title' => t('Email address change request email body', array(), $options),
+    'default' => email_confirm_mail_text('confirmation_email_body', NULL, array(), FALSE),
+    'description' => t("The above text will be the body for the email sent to a user that is attempting to update their email address. The text here will be sent to the user's new email address. The placeholders [user:name] and [site:name] will be replaced by the username and the site name.", array(), $options),
+    'localize' => TRUE,
+  );
+
+  $type['email_confirm_confirmation_original_email_body'] = array(
+    'type' => 'string',
+    'title' => t('Email address change request email body (Original)', array(), $options),
+    'default' => email_confirm_mail_text('confirmation_original_email_body', NULL, array(), FALSE),
+    'description' => t("The above text will be the body for the email sent to a user that is attempting to update their email address. The text here will be sent to the user's original email address. The placeholders [user:name] and [site:name] will be replaced by the username and the site name.", array(), $options),
+    'localize' => TRUE,
+  );
+
+  return $type;  
 }
 
 /**
@@ -118,6 +178,9 @@ function email_confirm_user_presave(&$edit, $account, $category) {
     $edit['data']['email_confirm']['pending_email'] = $edit['mail'];
     $edit['data']['email_confirm']['expiration_time'] = (REQUEST_TIME + 86400);
     module_invoke_all('email_confirm', 'email change', $account->uid, $account->mail, $edit['mail']);
+    if (module_exists('rules')) {
+      rules_invoke_event('email_confirm_email_change_request', $account, $account->mail, $edit['mail']);
+    }
     unset($edit['mail']);
     unset($edit['email_confirmed']);
   }
@@ -135,7 +198,7 @@ function email_confirm_form_user_profile_form_alter(&$form, &$form_state, $form_
 
   if ($user->uid && isset($user->data['email_confirm'])) {
     if (isset($user->data['email_confirm']['pending_email']) && $user->data['email_confirm']['expiration_time'] > REQUEST_TIME) {
-      $pending_email_notice = t('You currently have a pending change of your email address to <strong>%email</strong>', array('%email' => $user->data['email_confirm']['pending_email'])) .'<br />';
+      $pending_email_notice = t('You currently have a pending change of your email address to <strong>%email</strong>', array('%email' => $user->data['email_confirm']['pending_email'])) . '<br />';
       $form['account']['mail']['#description'] = $pending_email_notice . $form['account']['mail']['#description'];
     }
   }
@@ -190,6 +253,9 @@ function email_confirm_user_change_mail($uid = NULL, $timestamp = NULL, $new_mai
       watchdog('user', 'User %name used one-time e-mail change link at time %timestamp.', array('%name' => $account->name, '%timestamp' => $timestamp));
       user_save($account, array('mail' => $new_mail, 'login' => REQUEST_TIME, 'email_confirmed' => TRUE));
       module_invoke_all('email_confirm', 'email confirmation', $account->uid, $account->mail, $new_mail);
+      if (module_exists('rules')) {
+        rules_invoke_event('email_confirm_email_change_confirmation', $account, $account->mail, $new_mail);
+      }
       drupal_set_message(t('Your e-mail address is now %mail.', array('%mail' => $new_mail)));
       if ($user->uid) {
         drupal_goto('user/' . $user->uid);
@@ -279,7 +345,14 @@ function email_confirm_build_mail($edit) {
 function email_confirm_mail_text($key, $language = NULL, $variables = array(), $replace = TRUE) {
   $langcode = isset($language) ? $language->language : NULL;
 
-  if ($admin_setting = variable_get('email_confirm_' . $key, FALSE)) {
+  if (module_exists('i18n_variable') && $langcode) {
+    $admin_setting = i18n_variable_get('email_confirm_'. $key, $langcode);
+  }
+  else {
+    $admin_setting = variable_get('email_confirm_' . $key, FALSE);
+  }
+
+  if ($admin_setting) {
     // An admin setting overrides the default string.
     $text = $admin_setting;
   }
@@ -337,7 +410,7 @@ function email_confirm_mail_tokens(&$replacements, $data, $options) {
     $replacements['[email_confirm:email_url]'] = $data['email_confirm']->url;
   }
 }
-    
+
 /**
  * Generate a URL to confirm an email address change request.
  */
@@ -372,11 +445,10 @@ function email_confirm_exit() {
       }
       if (count($pruned_messages)) {
         foreach ($pruned_messages as $message) {
-          drupal_set_message($message, 'status');
+          drupal_set_message(filter_xss($message), 'status');
         }
       }
     }
     unset($_SESSION['email_changed']);
   }
 }
-

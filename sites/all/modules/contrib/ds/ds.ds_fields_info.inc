@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Display suite fields.
+ * Display Suite fields.
  */
 
 /**
@@ -23,6 +23,9 @@ function ds_ds_fields_info($entity_type) {
         'field_type' => $field->field_type,
         'properties' => $field->properties,
       );
+      if (!empty($field->ui_limit)) {
+        $fields[$entity_type][$key]['ui_limit'] = explode("\n", $field->ui_limit);
+      }
     }
   }
 
@@ -57,6 +60,9 @@ function ds_ds_fields_info($entity_type) {
     $fields['node']['comments'] = array(
       'title' => t('Comments'),
       'field_type' => DS_FIELD_TYPE_IGNORE,
+      'ui_limit' => array(
+        '*|full', '*|default',
+      ),
     );
   }
 
@@ -67,7 +73,7 @@ function ds_ds_fields_info($entity_type) {
     'function' => 'ds_render_field',
     'properties' => array(
       'settings' => array(
-        'link text' => array('type' => 'textfield', 'options' => array('no', 'yes')),
+        'link text' => array('type' => 'textfield'),
         'wrapper' => array('type' => 'textfield', 'description' => t('Eg: h1, h2, p')),
         'class' => array('type' => 'textfield', 'description' => t('Put a class on the wrapper. Eg: block-title')),
       ),
@@ -246,7 +252,7 @@ function ds_ds_fields_info($entity_type) {
 
   // Username
   $fields['user']['name'] = array(
-    'title' => 'Username',
+    'title' => t('Username'),
     'field_type' => DS_FIELD_TYPE_FUNCTION,
     'function' => 'ds_render_field',
     'properties' => array(
@@ -319,6 +325,21 @@ function ds_ds_fields_info($entity_type) {
           'class' => array('type' => 'textfield', 'description' => t('Put a class on the wrapper. Eg: block-title')),
         ),
         'default' => array('wrapper' => 'h2', 'link' => 0, 'class' => ''),
+      )
+    );
+
+    // Taxonomy term link.
+    $fields['taxonomy_term']['more_link'] = array(
+      'title' => t('Read more'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'ds_render_field',
+      'properties' => array(
+        'settings' => array(
+          'link text' => array('type' => 'textfield'),
+          'wrapper' => array('type' => 'textfield', 'description' => t('Eg: h1, h2, p')),
+          'class' => array('type' => 'textfield', 'description' => t('Put a class on the wrapper. Eg: block-title')),
+        ),
+        'default' => array('link text' => 'Read more', 'wrapper' => '', 'class' => '', 'link' => 1),
       )
     );
   }

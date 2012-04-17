@@ -16,13 +16,13 @@ function _metatags_quick_known_fields() {
       'title' => t('Abstract'),
       'description' => t('Enter a short abstract. Typically it is one sentence.'),
     ),
-    /* Comment that out until [#1229822] is solved properly
+    /* Comment that out until [#1229822] is solved properly */
     'canonical' => array(
       'type' => 'head_link',
       'widget' => 'metatags_quick_textfield',
       'title' => t('Canonical URL'),
       'description' => t('Canonical URLs are used from the search engines, and allow them to not report duplicate titles for HTML pages that are accessible from different URLs. Use a relative URL without the initial slash; canonical URLs that point to a different domain are normally not accepted.'),
-    ),*/
+    ),
     'copyright' => array(
       'type' => 'meta_contents',
       'widget' => 'metatags_quick_textfield',

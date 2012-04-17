@@ -1,7 +1,14 @@
 <?php
 
 /**
- * Filter by term id
+ * @file
+ * Definition of views_handler_filter_term_node_tid.
+ */
+
+/**
+ * Filter by term id.
+ *
+ * @ingroup views_filter_handlers
  */
 class views_handler_filter_term_node_tid extends views_handler_filter_many_to_one {
   // Stores the exposed input for this filter.
@@ -31,10 +38,10 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     $options = parent::option_definition();
 
     $options['type'] = array('default' => 'textfield');
-    $options['limit'] = array('default' => TRUE);
+    $options['limit'] = array('default' => TRUE, 'bool' => TRUE);
     $options['vocabulary'] = array('default' => 0);
     $options['hierarchy'] = array('default' => 0);
-    $options['error_message'] = array('default' => TRUE);
+    $options['error_message'] = array('default' => TRUE, 'bool' => TRUE);
 
     return $options;
   }
@@ -48,7 +55,7 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
 
     if ($this->options['limit']) {
       // We only do this when the form is displayed.
-      if ($this->options['vocabulary'] == 0) {
+      if (empty($this->options['vocabulary'])) {
         $first_vocabulary = reset($vocabularies);
         $this->options['vocabulary'] = $first_vocabulary->machine_name;
       }
@@ -181,8 +188,7 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
         '#default_value' => $default_value,
       );
 
-      /** @noinspection PhpUndefinedVariableInspection */
-      if (!empty($form_state['exposed']) && !isset($form_state['input'][$identifier])) {
+      if (!empty($form_state['exposed']) && isset($identifier) && !isset($form_state['input'][$identifier])) {
         $form_state['input'][$identifier] = $default_value;
       }
     }
@@ -335,6 +341,7 @@ class views_handler_filter_term_node_tid extends views_handler_filter_many_to_on
     $this->value_options = array();
 
     if ($this->value) {
+      $this->value = array_filter($this->value);
       $result = db_select('taxonomy_term_data', 'td')
         ->fields('td')
         ->condition('td.tid', $this->value)

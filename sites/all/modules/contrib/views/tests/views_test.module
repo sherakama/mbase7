@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Helper module for Views tests.
+ */
+
+/**
  * Implements hook_permission().
  */
 function views_test_permission() {
@@ -17,20 +22,20 @@ function views_test_permission() {
  */
 function views_test_views_api() {
   return array(
-    'api' => '3.0-alpha1',
+    'api' => 3.0,
     'template path' => drupal_get_path('module', 'views_test') . '/templates',
   );
 }
 
 /**
- * Implements hook_views_data()
+ * Implements hook_views_data().
  */
 function views_test_views_data() {
   return  variable_get('views_test_views_data', array());
 }
 
 /**
- * Implements hook_views_plugins()
+ * Implements hook_views_plugins().
  */
 function views_test_views_plugins() {
   return variable_get('views_test_views_plugins', array());

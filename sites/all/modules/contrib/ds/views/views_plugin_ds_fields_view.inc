@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Provides the Display suite views fields style plugin.
+ * Provides the Display Suite views fields style plugin.
  */
 
 /**
@@ -31,6 +31,7 @@ class views_plugin_ds_fields_view extends views_plugin_row {
       'taxonomy_term_data' => 'tid',
       'file_managed' => 'fid',
       'micro' => 'mid',
+      'drealty_listing' => 'id',
     );
     return isset($base_table_fields[$this->base_table]) ? $base_table_fields[$this->base_table] : 'nid';
   }
@@ -80,9 +81,6 @@ function template_preprocess_ds_row_fields(&$vars) {
       return;
     }
 
-    // Hide empty regions variable.
-    $hide_empty_regions = $layout['settings']['hide_empty_regions'];
-
     // Classes array.
     $vars['classes_array'] = array();
     $vars['classes_array'][] = strtr($bundle, '_', '-');
@@ -93,6 +91,9 @@ function template_preprocess_ds_row_fields(&$vars) {
 
     // Row index.
     $row_index = $view->row_index;
+
+    // Layout wrapper.
+    $vars['layout_wrapper'] = isset($layout['settings']['layout_wrapper']) ? $layout['settings']['layout_wrapper'] : 'div';
 
     // Create region variables based on the layout settings.
     foreach ($layout['regions'] as $region_name => $region) {
@@ -117,16 +118,10 @@ function template_preprocess_ds_row_fields(&$vars) {
           $region_content .= $view->style_plugin->rendered_fields[$row_index][$field];
           $region_content .= '</div>';
         }
+        // Region wrapper.
+        $vars[$region_name . '_wrapper'] = isset($layout['settings']['wrappers'][$region_name]) ? $layout['settings']['wrappers'][$region_name] : 'div';
       }
       $vars[$region_name] = $region_content;
-
-      // Hide empty regions.
-      if ($hide_empty_regions && empty($vars[$region_name]) && empty($layout['flexible'])) {
-        $vars[$region_name] = FALSE;
-      }
-      elseif (empty($vars[$region_name])) {
-        $vars[$region_name] = '&nbsp;';
-      }
 
       // Add extras classes to the region.
       $vars[$region_name . '_classes'] = !empty($layout['settings']['classes'][$region_name]) ? ' ' . implode(' ', $layout['settings']['classes'][$region_name]) : '';

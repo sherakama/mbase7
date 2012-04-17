@@ -5,13 +5,16 @@
  */
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function module_filter_uninstall() {
   variable_del('module_filter_tabs');
   variable_del('module_filter_count_enabled');
   variable_del('module_filter_visual_aid');
-  variable_del('module_filter_dynamic_save_position');
+  variable_del('module_filter_hide_empty_tabs');
+  variable_del('module_filter_use_url_fragment');
+  variable_del('module_filter_use_switch');
+  variable_del('module_filter_remember_update_state');
 }
 
 /**
@@ -19,4 +22,18 @@ function module_filter_uninstall() {
  */
 function module_filter_update_7100() {
   variable_del('module_filter_autocomplete');
+}
+
+/**
+ * Rebuild the menu.
+ */
+function module_filter_update_7200() {
+  menu_rebuild();
+}
+
+/**
+ * Remove the module_filter_dynamic_save_position variable.
+ */
+function module_filter_update_7201() {
+  variable_del('module_filter_dynamic_save_position');
 }
